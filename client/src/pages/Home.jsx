@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiShield, FiArrowRight, FiStar } from 'react-icons/fi';
 import { LuSearch, LuHeartHandshake, LuTrendingUp, LuShieldCheck, LuReceipt, LuEye, LuLock, LuChevronDown } from 'react-icons/lu';
@@ -62,6 +62,20 @@ const Home = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.hash === '#how-it-works') {
+            const element = document.getElementById('how-it-works');
+            if (element) {
+                // Small delay to ensure rendering is complete
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        }
+    }, [location.hash]);
+
     return (
         <>
             <div className="bg-cream min-h-[calc(100vh-80px)] flex flex-col justify-center">
@@ -101,7 +115,7 @@ const Home = () => {
                                     to="/campaigns"
                                     className="w-full sm:w-auto rounded-full bg-brand-dark px-6 py-3 text-sm font-medium text-white shadow-md hover:bg-brand-dark/90 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
                                 >
-                                    Explore campaigns <FiArrowRight className="w-4 h-4" />
+                                    Browse campaigns <FiArrowRight className="w-4 h-4" />
                                 </Link>
                                 <Link
                                     to="/register"
@@ -206,7 +220,7 @@ const Home = () => {
                             Hand-picked campaigns from verified organizations that need your support this week.
                         </p>
                         <Link to="/campaigns" className="inline-flex items-center justify-center gap-2 text-sm font-medium text-brand-dark hover:text-brand-dark/80 transition-colors">
-                            View all campaigns <FiArrowRight />
+                            Browse campaigns <FiArrowRight />
                         </Link>
                     </div>
 
@@ -353,7 +367,7 @@ const Home = () => {
             </div>
 
             {/* How it works Section */}
-            <div className="bg-cream py-20 border-t border-slate-200/60">
+            <div id="how-it-works" className="bg-cream py-20 border-t border-slate-200/60">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Header */}
                     <div className="text-center max-w-3xl mx-auto mb-20">

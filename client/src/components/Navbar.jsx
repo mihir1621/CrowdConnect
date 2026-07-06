@@ -30,7 +30,7 @@ const Navbar = () => {
                             to="/campaigns"
                             className={`text-sm font-medium transition-colors ${isActive('/campaigns') ? 'text-brand-dark' : 'text-slate-600 hover:text-brand-dark'}`}
                         >
-                            Discover
+                            Browse campaigns
                         </Link>
                         <Link
                             to="/categories"
@@ -38,12 +38,12 @@ const Navbar = () => {
                         >
                             Categories
                         </Link>
-                        <Link
-                            to="/how-it-works"
-                            className={`text-sm font-medium transition-colors ${isActive('/how-it-works') ? 'text-brand-dark' : 'text-slate-600 hover:text-brand-dark'}`}
+                        <a
+                            href="/#how-it-works"
+                            className={`text-sm font-medium transition-colors ${location.hash === '#how-it-works' ? 'text-brand-dark' : 'text-slate-600 hover:text-brand-dark'}`}
                         >
                             How it works
-                        </Link>
+                        </a>
                         <Link
                             to="/about"
                             className={`text-sm font-medium transition-colors ${isActive('/about') ? 'text-brand-dark' : 'text-slate-600 hover:text-brand-dark'}`}

@@ -26,7 +26,7 @@ const Footer = () => {
                             <li><Link to="/campaigns" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Browse campaigns</Link></li>
                             <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Categories</Link></li>
                             <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Start a campaign</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">How it works</Link></li>
+                            <li><a href="/#how-it-works" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">How it works</a></li>
                         </ul>
                     </div>
 
