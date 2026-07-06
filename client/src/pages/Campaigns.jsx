@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiSearch, FiFilter } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiArrowRight } from 'react-icons/fi';
 
 const Campaigns = () => {
     // Mock data for now
