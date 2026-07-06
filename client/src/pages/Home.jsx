@@ -8,6 +8,7 @@ import successStoryImage from '../assets/success-story-girl.png';
 import successStoryMedical from '../assets/success-story-medical.png';
 import successStoryDisaster from '../assets/success-story-disaster.png';
 import campaignEnvironment from '../assets/campaign-environment.png';
+import api from '../utils/api';
 
 const names = ['Anaya', 'Rahul', 'Priya', 'Amit', 'Neha', 'Vikram', 'Sneha', 'Rohan'];
 const causes = ['treatment', 'education', 'surgery', 'relief fund', 'startup', 'community project'];
@@ -29,12 +30,24 @@ const Home = () => {
     });
 
     const [openFaq, setOpenFaq] = useState(null);
+    const [featuredCampaigns, setFeaturedCampaigns] = useState([]);
 
     const toggleFaq = (index) => {
         setOpenFaq(openFaq === index ? null : index);
     };
 
     useEffect(() => {
+        // Fetch featured campaigns
+        const fetchFeatured = async () => {
+            try {
+                const response = await api.get('/campaigns');
+                setFeaturedCampaigns(response.data.slice(0, 3));
+            } catch (error) {
+                console.error("Error fetching featured campaigns:", error);
+            }
+        };
+        fetchFeatured();
+
         // Randomize floating card every 5-8 seconds
         const interval = setInterval(() => {
             const randomAmount = Math.floor(Math.random() * 50000) + 1000;
@@ -225,92 +238,50 @@ const Home = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {/* Card 1 */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                            <div className="relative h-56">
-                                <img src="https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Education" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-medium text-slate-700 shadow-sm">
-                                    Education
-                                </div>
+                        {featuredCampaigns.length > 0 ? featuredCampaigns.map((campaign) => {
+                            const raised = campaign.raisedAmount || 0;
+                            const goal = campaign.goalAmount || 1;
+                            const progress = Math.min(Math.round((raised / goal) * 100), 100);
+
+                            const endDate = new Date(campaign.endDate);
+                            const today = new Date();
+                            const diffTime = endDate - today;
+                            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                            return (
+                                <Link to={`/campaigns/${campaign._id}`} key={campaign._id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
+                                    <div className="relative h-56">
+                                        <img src={campaign.image || 'https://images.unsplash.com/photo-1509062522246-3755977927d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} alt={campaign.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-medium text-slate-700 shadow-sm">
+                                            {campaign.category}
+                                        </div>
+                                    </div>
+                                    <div className="p-6">
+                                        <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">{campaign.organization?.name || 'Verified Organization'}</p>
+                                        <h3 className="text-xl font-bold font-serif text-slate-900 mb-3 line-clamp-2">{campaign.title}</h3>
+                                        <p className="text-sm text-slate-600 mb-6 line-clamp-2">{campaign.description}</p>
+
+                                        <div className="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
+                                            <div className="bg-brand-dark h-full rounded-full" style={{ width: `${progress}%` }}></div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center text-sm mb-4">
+                                            <div><span className="font-bold text-slate-900">₹{raised.toLocaleString()}</span> <span className="text-slate-500">of ₹{goal.toLocaleString()}</span></div>
+                                            <div className="text-slate-500">{progress}%</div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center text-xs text-slate-500 pt-4 border-t border-slate-100">
+                                            <div>{campaign.donors?.length || 0} donors</div>
+                                            <div>{daysLeft > 0 ? daysLeft : 0} days left</div>
+                                        </div>
+                                    </div>
+                                </Link>
+                            );
+                        }) : (
+                            <div className="col-span-3 text-center py-12 text-slate-500">
+                                Loading featured campaigns...
                             </div>
-                            <div className="p-6">
-                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Ashadeep Foundation</p>
-                                <h3 className="text-xl font-bold font-serif text-slate-900 mb-3 line-clamp-2">Books for 12 rural schools in Bihar</h3>
-                                <p className="text-sm text-slate-600 mb-6 line-clamp-2">Bring libraries to children who have never held a storybook.</p>
-
-                                <div className="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
-                                    <div className="bg-brand-dark h-full rounded-full" style={{ width: '71%' }}></div>
-                                </div>
-
-                                <div className="flex justify-between items-center text-sm mb-4">
-                                    <div><span className="font-bold text-slate-900">₹4.3 L</span> <span className="text-slate-500">of ₹6.0 L</span></div>
-                                    <div className="text-slate-500">71%</div>
-                                </div>
-
-                                <div className="flex justify-between items-center text-xs text-slate-500 pt-4 border-t border-slate-100">
-                                    <div>1,284 donors</div>
-                                    <div>21 days left</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Card 2 */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                            <div className="relative h-56">
-                                <img src="https://images.unsplash.com/photo-1584515933487-779824d29309?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Medical" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-medium text-slate-700 shadow-sm">
-                                    Medical
-                                </div>
-                            </div>
-                            <div className="p-6">
-                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">St. Jude India Childcare Centres</p>
-                                <h3 className="text-xl font-bold font-serif text-slate-900 mb-3 line-clamp-2">Help 7-year-old Anaya beat leukemia</h3>
-                                <p className="text-sm text-slate-600 mb-6 line-clamp-2">Every rupee brings her one step closer to remission.</p>
-
-                                <div className="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
-                                    <div className="bg-brand-dark h-full rounded-full" style={{ width: '73%' }}></div>
-                                </div>
-
-                                <div className="flex justify-between items-center text-sm mb-4">
-                                    <div><span className="font-bold text-slate-900">₹18.2 L</span> <span className="text-slate-500">of ₹25.0 L</span></div>
-                                    <div className="text-slate-500">73%</div>
-                                </div>
-
-                                <div className="flex justify-between items-center text-xs text-slate-500 pt-4 border-t border-slate-100">
-                                    <div>3,921 donors</div>
-                                    <div>12 days left</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Card 3 */}
-                        <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group">
-                            <div className="relative h-56">
-                                <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Disaster Relief" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[11px] font-medium text-slate-700 shadow-sm">
-                                    Disaster Relief
-                                </div>
-                            </div>
-                            <div className="p-6">
-                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Goonj</p>
-                                <h3 className="text-xl font-bold font-serif text-slate-900 mb-3 line-clamp-2">Assam flood relief: shelter & food</h3>
-                                <p className="text-sm text-slate-600 mb-6 line-clamp-2">Emergency supplies reaching 40 villages this week.</p>
-
-                                <div className="w-full bg-slate-100 rounded-full h-2 mb-3 overflow-hidden">
-                                    <div className="bg-brand-dark h-full rounded-full" style={{ width: '63%' }}></div>
-                                </div>
-
-                                <div className="flex justify-between items-center text-sm mb-4">
-                                    <div><span className="font-bold text-slate-900">₹9.5 L</span> <span className="text-slate-500">of ₹15.0 L</span></div>
-                                    <div className="text-slate-500">63%</div>
-                                </div>
-
-                                <div className="flex justify-between items-center text-xs text-slate-500 pt-4 border-t border-slate-100">
-                                    <div>2,140 donors</div>
-                                    <div>8 days left</div>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -713,121 +684,50 @@ const Home = () => {
 
                     {/* Campaigns Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Card 1 */}
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group flex flex-col h-full">
-                            <div className="relative h-48">
-                                <img src={successStoryImage} alt="Education" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-700 shadow-sm">
-                                    Education
-                                </div>
-                            </div>
-                            <div className="p-5 flex flex-col flex-grow">
-                                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Ashadeep Foundation</p>
-                                <h3 className="text-lg font-bold font-serif text-slate-900 mb-2 line-clamp-2">Books for 12 rural schools in Bihar</h3>
-                                <p className="text-xs text-slate-600 mb-4 line-clamp-2 flex-grow">Bring libraries to children who have never held a storybook.</p>
+                        {featuredCampaigns.length > 0 ? featuredCampaigns.slice(0, 4).map((campaign) => {
+                            const raised = campaign.raisedAmount || 0;
+                            const goal = campaign.goalAmount || 1;
+                            const progress = Math.min(Math.round((raised / goal) * 100), 100);
 
-                                <div className="mt-auto">
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                                        <div className="bg-brand-dark h-full rounded-full" style={{ width: '71%' }}></div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs mb-3">
-                                        <div><span className="font-bold text-slate-900">₹4.3 L</span> <span className="text-slate-500">of ₹6.0 L</span></div>
-                                        <div className="text-slate-500">71%</div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] text-slate-500 pt-3 border-t border-slate-100">
-                                        <div>1,284 donors</div>
-                                        <div>21 days left</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                            const endDate = new Date(campaign.endDate);
+                            const today = new Date();
+                            const diffTime = endDate - today;
+                            const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-                        {/* Card 2 */}
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group flex flex-col h-full">
-                            <div className="relative h-48">
-                                <img src={successStoryMedical} alt="Medical" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-700 shadow-sm">
-                                    Medical
-                                </div>
-                            </div>
-                            <div className="p-5 flex flex-col flex-grow">
-                                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">St. Jude India Childcare Centres</p>
-                                <h3 className="text-lg font-bold font-serif text-slate-900 mb-2 line-clamp-2">Help 7-year-old Anaya beat leukemia</h3>
-                                <p className="text-xs text-slate-600 mb-4 line-clamp-2 flex-grow">Every rupee brings her one step closer to remission.</p>
+                            return (
+                                <Link to={`/campaigns/${campaign._id}`} key={`latest-${campaign._id}`} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group flex flex-col h-full">
+                                    <div className="relative h-48">
+                                        <img src={campaign.image || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} alt={campaign.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-700 shadow-sm">
+                                            {campaign.category}
+                                        </div>
+                                    </div>
+                                    <div className="p-5 flex flex-col flex-grow">
+                                        <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">{campaign.organization?.name || 'Verified Organization'}</p>
+                                        <h3 className="text-lg font-bold font-serif text-slate-900 mb-2 line-clamp-2">{campaign.title}</h3>
+                                        <p className="text-xs text-slate-600 mb-4 line-clamp-2 flex-grow">{campaign.description}</p>
 
-                                <div className="mt-auto">
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                                        <div className="bg-brand-dark h-full rounded-full" style={{ width: '73%' }}></div>
+                                        <div className="mt-auto">
+                                            <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
+                                                <div className="bg-brand-dark h-full rounded-full" style={{ width: `${progress}%` }}></div>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs mb-3">
+                                                <div><span className="font-bold text-slate-900">₹{raised.toLocaleString()}</span> <span className="text-slate-500">of ₹{goal.toLocaleString()}</span></div>
+                                                <div className="text-slate-500">{progress}%</div>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px] text-slate-500 pt-3 border-t border-slate-100">
+                                                <div>{campaign.donors?.length || 0} donors</div>
+                                                <div>{daysLeft > 0 ? daysLeft : 0} days left</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-center text-xs mb-3">
-                                        <div><span className="font-bold text-slate-900">₹18.2 L</span> <span className="text-slate-500">of ₹25.0 L</span></div>
-                                        <div className="text-slate-500">73%</div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] text-slate-500 pt-3 border-t border-slate-100">
-                                        <div>3,921 donors</div>
-                                        <div>12 days left</div>
-                                    </div>
-                                </div>
+                                </Link>
+                            );
+                        }) : (
+                            <div className="col-span-4 text-center py-12 text-slate-500">
+                                Loading latest campaigns...
                             </div>
-                        </div>
-
-                        {/* Card 3 */}
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group flex flex-col h-full">
-                            <div className="relative h-48">
-                                <img src={successStoryDisaster} alt="Disaster Relief" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-700 shadow-sm">
-                                    Disaster Relief
-                                </div>
-                            </div>
-                            <div className="p-5 flex flex-col flex-grow">
-                                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Goonj</p>
-                                <h3 className="text-lg font-bold font-serif text-slate-900 mb-2 line-clamp-2">Assam flood relief: shelter & food</h3>
-                                <p className="text-xs text-slate-600 mb-4 line-clamp-2 flex-grow">Emergency supplies reaching 40 villages this week.</p>
-
-                                <div className="mt-auto">
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                                        <div className="bg-brand-dark h-full rounded-full" style={{ width: '63%' }}></div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs mb-3">
-                                        <div><span className="font-bold text-slate-900">₹9.5 L</span> <span className="text-slate-500">of ₹15.0 L</span></div>
-                                        <div className="text-slate-500">63%</div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] text-slate-500 pt-3 border-t border-slate-100">
-                                        <div>2,140 donors</div>
-                                        <div>8 days left</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Card 4 */}
-                        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-md transition-shadow group flex flex-col h-full">
-                            <div className="relative h-48">
-                                <img src={campaignEnvironment} alt="Environment" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-700 shadow-sm">
-                                    Environment
-                                </div>
-                            </div>
-                            <div className="p-5 flex flex-col flex-grow">
-                                <p className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">SELCO Foundation</p>
-                                <h3 className="text-lg font-bold font-serif text-slate-900 mb-2 line-clamp-2">Solar lamps for 500 Himalayan homes</h3>
-                                <p className="text-xs text-slate-600 mb-4 line-clamp-2 flex-grow">Clean light, cleaner air, brighter evenings.</p>
-
-                                <div className="mt-auto">
-                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                                        <div className="bg-brand-dark h-full rounded-full" style={{ width: '53%' }}></div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-xs mb-3">
-                                        <div><span className="font-bold text-slate-900">₹2.1 L</span> <span className="text-slate-500">of ₹4.0 L</span></div>
-                                        <div className="text-slate-500">53%</div>
-                                    </div>
-                                    <div className="flex justify-between items-center text-[10px] text-slate-500 pt-3 border-t border-slate-100">
-                                        <div>612 donors</div>
-                                        <div>34 days left</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -914,7 +814,7 @@ const Home = () => {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
         </>
     );
 };

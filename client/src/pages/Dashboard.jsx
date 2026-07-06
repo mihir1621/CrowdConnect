@@ -1,7 +1,49 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FiActivity, FiDollarSign, FiHeart, FiTrendingUp, FiSettings, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 const Dashboard = () => {
+    const { currentUser, logout } = useAuth();
+    const [userData, setUserData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const response = await api.get('/users/me');
+                setUserData(response.data);
+            } catch (error) {
+                console.error("Error fetching user data:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (currentUser) {
+            fetchUserData();
+        }
+    }, [currentUser]);
+
+    if (loading) {
+        return (
+            <div className="bg-slate-50 min-h-screen py-8 flex items-center justify-center">
+                <div className="text-slate-500">Loading dashboard...</div>
+            </div>
+        );
+    }
+
+    const { user, stats, recentDonations } = userData || {
+        user: { name: currentUser?.displayName || 'User', role: 'Visitor' },
+        stats: { totalDonated: 0, campaignsSupported: 0, impactScore: 0 },
+        recentDonations: []
+    };
+
+    const getInitials = (name) => {
+        return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
+    };
+
     return (
         <div className="bg-slate-50 min-h-screen py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,11 +54,11 @@ const Dashboard = () => {
                         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sticky top-24">
                             <div className="flex items-center gap-4 mb-8">
                                 <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                                    JD
+                                    {getInitials(user.name)}
                                 </div>
                                 <div>
-                                    <h2 className="font-bold text-slate-900">John Doe</h2>
-                                    <p className="text-sm text-slate-500">Visitor</p>
+                                    <h2 className="font-bold text-slate-900">{user.name}</h2>
+                                    <p className="text-sm text-slate-500">{user.role}</p>
                                 </div>
                             </div>
 
@@ -31,9 +73,9 @@ const Dashboard = () => {
                                     <FiSettings /> Settings
                                 </a>
                                 <div className="pt-4 mt-4 border-t border-slate-100">
-                                    <a href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 font-medium transition-colors">
+                                    <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 font-medium transition-colors">
                                         <FiLogOut /> Sign Out
-                                    </a>
+                                    </button>
                                 </div>
                             </nav>
                         </div>
@@ -55,7 +97,7 @@ const Dashboard = () => {
                                         <FiDollarSign />
                                     </div>
                                 </div>
-                                <p className="text-4xl font-extrabold text-slate-900">$1,250</p>
+                                <p className="text-4xl font-extrabold text-slate-900">₹{stats.totalDonated.toLocaleString()}</p>
                             </motion.div>
 
                             <motion.div
@@ -68,7 +110,7 @@ const Dashboard = () => {
                                         <FiHeart />
                                     </div>
                                 </div>
-                                <p className="text-4xl font-extrabold text-slate-900">4</p>
+                                <p className="text-4xl font-extrabold text-slate-900">{stats.campaignsSupported}</p>
                             </motion.div>
 
                             <motion.div
@@ -81,7 +123,7 @@ const Dashboard = () => {
                                         <FiTrendingUp />
                                     </div>
                                 </div>
-                                <p className="text-4xl font-extrabold text-slate-900">85</p>
+                                <p className="text-4xl font-extrabold text-slate-900">{stats.impactScore}</p>
                             </motion.div>
                         </div>
 
@@ -92,25 +134,29 @@ const Dashboard = () => {
                                 <button className="text-sm font-medium text-indigo-600 hover:text-indigo-800">View All</button>
                             </div>
                             <div className="divide-y divide-slate-100">
-                                {[1, 2, 3].map((i) => (
-                                    <div key={i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                {recentDonations.length > 0 ? recentDonations.map((donation, i) => (
+                                    <div key={donation._id || i} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className="w-12 h-12 bg-slate-200 rounded-xl overflow-hidden">
-                                                <img src={`https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80`} alt="Campaign" className="w-full h-full object-cover" />
+                                                <img src={donation.campaign?.image || `https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80`} alt="Campaign" className="w-full h-full object-cover" />
                                             </div>
                                             <div>
-                                                <h4 className="font-bold text-slate-900">Clean Water Initiative</h4>
-                                                <p className="text-sm text-slate-500">Donated on Oct {12 - i}, 2023</p>
+                                                <h4 className="font-bold text-slate-900">{donation.campaign?.title || 'Unknown Campaign'}</h4>
+                                                <p className="text-sm text-slate-500">Donated on {new Date(donation.createdAt).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="font-bold text-slate-900">+${50 * i}</p>
+                                            <p className="font-bold text-slate-900">+₹{donation.amount}</p>
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                                 Successful
                                             </span>
                                         </div>
                                     </div>
-                                ))}
+                                )) : (
+                                    <div className="p-6 text-center text-slate-500">
+                                        No recent donations found.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

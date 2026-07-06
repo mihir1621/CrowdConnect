@@ -9,12 +9,14 @@ const app = express();
 
 import campaignRoutes from './routes/campaigns.js';
 import paymentRoutes from './routes/payments.js';
+import userRoutes from './routes/users.js';
 
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/users', userRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

@@ -1,28 +1,55 @@
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiShare2, FiHeart, FiClock, FiShield, FiCheckCircle } from 'react-icons/fi';
+import api from '../utils/api';
 
 const CampaignDetails = () => {
     const { id } = useParams();
+    const [campaign, setCampaign] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
-    // Mock data
-    const campaign = {
-        id,
-        title: 'Clean Water Initiative in Rural Kenya',
-        organization: 'Water for All',
-        image: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80',
-        goal: 50000,
-        raised: 35000,
-        donors: 1240,
-        daysLeft: 12,
-        description: `Access to clean water is a fundamental human right, yet millions in rural Kenya still lack this basic necessity. Our initiative aims to build 50 sustainable solar-powered water wells in the most affected communities. 
-    
-These wells will not only provide safe drinking water but also improve sanitation, reduce waterborne diseases, and allow children—especially girls—to attend school instead of walking miles to fetch water.
+    useEffect(() => {
+        const fetchCampaign = async () => {
+            try {
+                const response = await api.get(`/campaigns/${id}`);
+                setCampaign(response.data);
+            } catch (err) {
+                console.error("Error fetching campaign:", err);
+                setError('Failed to load campaign details.');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-Your contribution will directly fund the drilling, equipment, and community training needed to maintain these water sources for generations to come. Join us in making a lasting impact.`,
-    };
+        fetchCampaign();
+    }, [id]);
 
-    const progress = (campaign.raised / campaign.goal) * 100;
+    if (loading) {
+        return (
+            <div className="bg-slate-50 min-h-screen py-12 flex items-center justify-center">
+                <div className="text-slate-500">Loading campaign...</div>
+            </div>
+        );
+    }
+
+    if (error || !campaign) {
+        return (
+            <div className="bg-slate-50 min-h-screen py-12 flex items-center justify-center">
+                <div className="text-red-500">{error || 'Campaign not found.'}</div>
+            </div>
+        );
+    }
+
+    const raised = campaign.raisedAmount || 0;
+    const goal = campaign.goalAmount || 1;
+    const progress = Math.min((raised / goal) * 100, 100);
+
+    const endDate = new Date(campaign.endDate);
+    const today = new Date();
+    const diffTime = endDate - today;
+    const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return (
         <div className="bg-slate-50 min-h-screen py-12">
@@ -31,7 +58,7 @@ Your contribution will directly fund the drilling, equipment, and community trai
                     {/* Header Image */}
                     <div className="relative h-64 md:h-96 w-full">
                         <img
-                            src={campaign.image}
+                            src={campaign.image || 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'}
                             alt={campaign.title}
                             className="w-full h-full object-cover"
                         />
@@ -44,7 +71,7 @@ Your contribution will directly fund the drilling, equipment, and community trai
                             <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 leading-tight">
                                 {campaign.title}
                             </h1>
-                            <p className="text-lg text-white/80 font-medium">by {campaign.organization}</p>
+                            <p className="text-lg text-white/80 font-medium">by {campaign.organization?.name || 'Verified Organization'}</p>
                         </div>
                     </div>
 
@@ -62,15 +89,15 @@ Your contribution will directly fund the drilling, equipment, and community trai
                                 <h3 className="text-xl font-bold text-slate-900 mb-6">Recent Updates</h3>
                                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
                                     <div className="flex items-center gap-3 mb-3">
-                                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">
-                                            WA
+                                        <div className="w-10 h-10 bg-brand-dark/10 rounded-full flex items-center justify-center text-brand-dark font-bold">
+                                            {campaign.organization?.name ? campaign.organization.name.substring(0, 2).toUpperCase() : 'VO'}
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-slate-900">{campaign.organization}</p>
-                                            <p className="text-xs text-slate-500">2 days ago</p>
+                                            <p className="font-semibold text-slate-900">{campaign.organization?.name || 'Verified Organization'}</p>
+                                            <p className="text-xs text-slate-500">Just now</p>
                                         </div>
                                     </div>
-                                    <p className="text-slate-600">We've just secured the permits for the first 10 wells! Thank you to everyone who has donated so far. Drilling begins next week.</p>
+                                    <p className="text-slate-600">Campaign launched successfully! Thank you for your support.</p>
                                 </div>
                             </div>
                         </div>
@@ -80,8 +107,8 @@ Your contribution will directly fund the drilling, equipment, and community trai
                             <div className="sticky top-24">
                                 <div className="mb-8">
                                     <div className="flex items-end gap-2 mb-2">
-                                        <span className="text-4xl font-extrabold text-slate-900">${campaign.raised.toLocaleString()}</span>
-                                        <span className="text-lg text-slate-500 mb-1">raised of ${campaign.goal.toLocaleString()}</span>
+                                        <span className="text-4xl font-extrabold text-slate-900">₹{raised.toLocaleString()}</span>
+                                        <span className="text-lg text-slate-500 mb-1">raised of ₹{goal.toLocaleString()}</span>
                                     </div>
 
                                     <div className="w-full bg-slate-100 rounded-full h-3 mb-4 overflow-hidden">
@@ -89,33 +116,33 @@ Your contribution will directly fund the drilling, equipment, and community trai
                                             initial={{ width: 0 }}
                                             animate={{ width: `${progress}%` }}
                                             transition={{ duration: 1, ease: "easeOut" }}
-                                            className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full"
+                                            className="bg-brand-dark h-full rounded-full"
                                         ></motion.div>
                                     </div>
 
                                     <div className="flex justify-between text-sm font-medium text-slate-600 mb-8">
-                                        <div className="flex items-center gap-1"><FiHeart className="text-pink-500" /> {campaign.donors} donors</div>
-                                        <div className="flex items-center gap-1"><FiClock className="text-indigo-500" /> {campaign.daysLeft} days left</div>
+                                        <div className="flex items-center gap-1"><FiHeart className="text-pink-500" /> {campaign.donors?.length || 0} donors</div>
+                                        <div className="flex items-center gap-1"><FiClock className="text-brand-dark" /> {daysLeft > 0 ? daysLeft : 0} days left</div>
                                     </div>
 
                                     <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
                                         <h3 className="text-lg font-bold text-slate-900 mb-4">Make a Donation</h3>
                                         <div className="grid grid-cols-2 gap-3 mb-4">
-                                            {[25, 50, 100, 250].map((amount) => (
-                                                <button key={amount} className="py-3 border-2 border-slate-100 rounded-xl font-semibold text-slate-700 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all">
-                                                    ${amount}
+                                            {[500, 1000, 2000, 5000].map((amount) => (
+                                                <button key={amount} className="py-3 border-2 border-slate-100 rounded-xl font-semibold text-slate-700 hover:border-brand-dark hover:text-brand-dark hover:bg-brand-dark/5 transition-all">
+                                                    ₹{amount}
                                                 </button>
                                             ))}
                                         </div>
                                         <div className="relative mb-6">
-                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">$</span>
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-medium">₹</span>
                                             <input
                                                 type="number"
                                                 placeholder="Custom Amount"
-                                                className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-slate-100 focus:outline-none focus:border-indigo-500 focus:ring-0 transition-colors font-medium"
+                                                className="w-full pl-8 pr-4 py-3 rounded-xl border-2 border-slate-100 focus:outline-none focus:border-brand-dark focus:ring-0 transition-colors font-medium"
                                             />
                                         </div>
-                                        <button className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                                        <button className="w-full bg-brand-dark text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-brand-dark/20 hover:bg-brand-dark/90 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
                                             Donate Now <FiHeart />
                                         </button>
                                     </div>
