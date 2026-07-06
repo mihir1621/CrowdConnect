@@ -24,8 +24,8 @@ const Footer = () => {
                         <h3 className="text-brand-dark font-serif font-bold mb-6">Platform</h3>
                         <ul className="space-y-4">
                             <li><Link to="/campaigns" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Browse campaigns</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Categories</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Start a campaign</Link></li>
+                            <li><Link to="/categories" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Categories</Link></li>
+                            <li><Link to="/start-campaign" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Start a campaign</Link></li>
                             <li><a href="/#how-it-works" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">How it works</a></li>
                         </ul>
                     </div>
@@ -33,30 +33,30 @@ const Footer = () => {
                     <div>
                         <h3 className="text-brand-dark font-serif font-bold mb-6">Organizations</h3>
                         <ul className="space-y-4">
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Register</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Verification</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Compliance</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Pricing</Link></li>
+                            <li><Link to="/register" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Register</Link></li>
+                            <li><Link to="/verification" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Verification</Link></li>
+                            <li><Link to="/compliance" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Compliance</Link></li>
+                            <li><Link to="/pricing" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Pricing</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h3 className="text-brand-dark font-serif font-bold mb-6">Company</h3>
                         <ul className="space-y-4">
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">About</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Careers</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Press</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Contact</Link></li>
+                            <li><Link to="/about" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">About</Link></li>
+                            <li><Link to="/careers" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Careers</Link></li>
+                            <li><Link to="/press" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Press</Link></li>
+                            <li><Link to="/contact" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Contact</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h3 className="text-brand-dark font-serif font-bold mb-6">Legal</h3>
                         <ul className="space-y-4">
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Terms</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Privacy</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Refund policy</Link></li>
-                            <li><Link to="#" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Trust & safety</Link></li>
+                            <li><Link to="/terms" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Terms</Link></li>
+                            <li><Link to="/privacy" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Privacy</Link></li>
+                            <li><Link to="/refund-policy" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Refund policy</Link></li>
+                            <li><Link to="/trust-safety" className="text-sm text-slate-500 hover:text-brand-dark transition-colors">Trust & safety</Link></li>
                         </ul>
                     </div>
                 </div>

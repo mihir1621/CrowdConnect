@@ -10,6 +10,18 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import About from './pages/About';
 import Categories from './pages/Categories';
+import StartCampaign from './pages/StartCampaign';
+import Contact from './pages/Contact';
+import Careers from './pages/Careers';
+import Press from './pages/Press';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
+import RefundPolicy from './pages/RefundPolicy';
+import TrustSafety from './pages/TrustSafety';
+import Verification from './pages/Verification';
+import Compliance from './pages/Compliance';
+import Pricing from './pages/Pricing';
+
 const ScrollToTop = () => {
   const { pathname } = useLocation();
 
@@ -36,6 +48,17 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/start-campaign" element={<StartCampaign />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/careers" element={<Careers />} />
+            <Route path="/press" element={<Press />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/trust-safety" element={<TrustSafety />} />
+            <Route path="/verification" element={<Verification />} />
+            <Route path="/compliance" element={<Compliance />} />
+            <Route path="/pricing" element={<Pricing />} />
           </Routes>
         </main>
         <Footer />
