@@ -12,6 +12,7 @@ import Register from './pages/Register';
 import About from './pages/About';
 import Categories from './pages/Categories';
 import StartCampaign from './pages/StartCampaign';
+import CreateCampaign from './pages/CreateCampaign';
 import Contact from './pages/Contact';
 import Careers from './pages/Careers';
 import Press from './pages/Press';
@@ -49,6 +50,11 @@ function App() {
             <Route path="/dashboard" element={
               <PrivateRoute>
                 <Dashboard />
+              </PrivateRoute>
+            } />
+            <Route path="/create-campaign" element={
+              <PrivateRoute>
+                <CreateCampaign />
               </PrivateRoute>
             } />
             <Route path="/login" element={<Login />} />

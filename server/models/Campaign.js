@@ -21,6 +21,15 @@ const campaignSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    category: {
+        type: String,
+        required: true,
+        default: 'Other'
+    },
+    endDate: {
+        type: Date,
+        required: true,
+    },
     organization: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

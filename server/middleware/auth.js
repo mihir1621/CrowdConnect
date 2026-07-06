@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import dotenv from 'dotenv';
+import User from '../models/User.js';
 
 dotenv.config();
 
@@ -54,9 +55,15 @@ export const verifyToken = async (req, res, next) => {
 export const checkRole = (roles) => {
     return async (req, res, next) => {
         try {
-            // Here we would typically fetch the user from MongoDB using req.user.uid
-            // and check if their role is in the allowed roles array.
-            // For now, we'll just pass it through.
+            const user = await User.findOne({ firebaseUid: req.user.uid });
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            if (!roles.includes(user.role)) {
+                return res.status(403).json({ message: `Forbidden: Requires one of roles: ${roles.join(', ')}` });
+            }
+
             next();
         } catch (error) {
             res.status(500).json({ message: 'Server error checking role' });

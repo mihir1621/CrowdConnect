@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { FiHeart, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
+import { FiHeart, FiArrowRight, FiCheckCircle, FiUser, FiBriefcase } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { motion } from 'framer-motion';
@@ -10,6 +10,7 @@ const Register = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [role, setRole] = useState('Donor');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { register, loginWithGoogle } = useAuth();
@@ -20,7 +21,7 @@ const Register = () => {
         try {
             setError('');
             setLoading(true);
-            await register(email, password, 'Donor', name);
+            await register(email, password, role, name);
             navigate('/dashboard');
         } catch (err) {
             setError('Failed to create an account. ' + err.message);
@@ -34,7 +35,7 @@ const Register = () => {
         try {
             setError('');
             setLoading(true);
-            await loginWithGoogle();
+            await loginWithGoogle(role);
             navigate('/dashboard');
         } catch (err) {
             setError('Failed to sign in with Google.');
@@ -124,6 +125,26 @@ const Register = () => {
                         </div>
                     )}
 
+                    {/* Role Selection */}
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                        <button
+                            type="button"
+                            onClick={() => setRole('Donor')}
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${role === 'Donor' ? 'border-brand-dark bg-brand-dark/5 text-brand-dark' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                        >
+                            <FiUser className="w-6 h-6" />
+                            <span className="text-sm font-bold">I want to donate</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setRole('Organization')}
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all ${role === 'Organization' ? 'border-brand-dark bg-brand-dark/5 text-brand-dark' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                        >
+                            <FiBriefcase className="w-6 h-6" />
+                            <span className="text-sm font-bold">I want to raise funds</span>
+                        </button>
+                    </div>
+
                     {/* Social Login */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
                         <button
@@ -159,13 +180,13 @@ const Register = () => {
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 className="peer block w-full border-0 border-b-2 border-slate-200 bg-transparent py-2 px-0 text-base sm:text-lg text-slate-900 focus:border-brand-dark focus:ring-0 transition-colors placeholder-transparent"
-                                placeholder="Full Name"
+                                placeholder={role === 'Organization' ? "Organization Name" : "Full Name"}
                             />
                             <label
                                 htmlFor="name"
                                 className="absolute left-0 -top-5 text-xs font-bold text-slate-500 transition-all peer-placeholder-shown:top-2 peer-placeholder-shown:text-base peer-placeholder-shown:font-normal peer-placeholder-shown:text-slate-400 peer-focus:-top-5 peer-focus:text-xs peer-focus:font-bold peer-focus:text-brand-dark cursor-text"
                             >
-                                Full Name
+                                {role === 'Organization' ? "Organization Name" : "Full Name"}
                             </label>
                         </div>
 

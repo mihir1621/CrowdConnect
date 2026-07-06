@@ -1,5 +1,6 @@
 import express from 'express';
 import Campaign from '../models/Campaign.js';
+import User from '../models/User.js';
 import { verifyToken, checkRole } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -28,13 +29,15 @@ router.get('/:id', async (req, res) => {
 // Create campaign (Organization only)
 router.post('/', verifyToken, checkRole(['Organization', 'Admin']), async (req, res) => {
     try {
-        // In a real app, we'd find the user by req.user.uid to get their MongoDB _id
-        // const user = await User.findOne({ firebaseUid: req.user.uid });
+        const user = await User.findOne({ firebaseUid: req.user.uid });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found in database' });
+        }
 
         const campaign = new Campaign({
             ...req.body,
-            // organization: user._id
-            organization: '60d5ecb8b392d700153ee859' // Mock ID for now
+            organization: user._id
         });
 
         const savedCampaign = await campaign.save();

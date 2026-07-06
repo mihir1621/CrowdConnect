@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiEdit3, FiTarget, FiShare2, FiDollarSign, FiArrowRight, FiCheckCircle } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 
 const StartCampaign = () => {
+    const { currentUser } = useAuth();
+
     const steps = [
         { icon: <FiEdit3 className="w-6 h-6" />, title: "Tell your story", description: "Write a compelling description of your cause. Add photos and videos that show the real impact of donations." },
         { icon: <FiTarget className="w-6 h-6" />, title: "Set your goal", description: "Define how much you need and create a clear budget breakdown so donors know exactly where their money goes." },
@@ -31,8 +34,8 @@ const StartCampaign = () => {
                         <p className="text-lg text-slate-600 mb-8 max-w-lg">
                             Launch a fundraising campaign in minutes. Whether it's for medical aid, education, or community development — we'll help you every step of the way.
                         </p>
-                        <Link to="/register" className="inline-flex items-center gap-2 rounded-full bg-brand-dark px-8 py-4 text-base font-bold text-white hover:bg-brand-dark/90 transition-colors">
-                            Get Started <FiArrowRight />
+                        <Link to={currentUser ? "/create-campaign" : "/register"} className="inline-flex items-center gap-2 rounded-full bg-brand-dark px-8 py-4 text-base font-bold text-white hover:bg-brand-dark/90 transition-colors">
+                            {currentUser ? "Create a Campaign" : "Get Started"} <FiArrowRight />
                         </Link>
                     </motion.div>
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, delay: 0.2 }} className="relative h-[450px] rounded-3xl overflow-hidden shadow-2xl">
@@ -74,10 +77,12 @@ const StartCampaign = () => {
             {/* CTA */}
             <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                 <h2 className="text-4xl font-bold font-serif text-brand-dark mb-6">Ready to make a difference?</h2>
-                <p className="text-lg text-slate-600 mb-10">Create your free account and launch your first campaign today. It only takes 5 minutes.</p>
+                <p className="text-lg text-slate-600 mb-10">
+                    {currentUser ? "Launch your campaign today. It only takes 5 minutes." : "Create your free account and launch your first campaign today. It only takes 5 minutes."}
+                </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
-                    <Link to="/register" className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-brand-dark rounded-full hover:bg-brand-dark/90 transition-colors">
-                        Create Free Account
+                    <Link to={currentUser ? "/create-campaign" : "/register"} className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-brand-dark rounded-full hover:bg-brand-dark/90 transition-colors">
+                        {currentUser ? "Start Campaign Now" : "Create Free Account"}
                     </Link>
                     <Link to="/campaigns" className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-brand-dark bg-white border-2 border-brand-dark rounded-full hover:bg-cream transition-colors">
                         Browse Campaigns
