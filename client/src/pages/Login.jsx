@@ -1,10 +1,48 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiHeart, FiArrowRight } from 'react-icons/fi';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { login, loginWithGoogle } = useAuth();
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            setError('');
+            setLoading(true);
+            await login(email, password);
+            navigate('/dashboard');
+        } catch (err) {
+            setError('Failed to sign in. Please check your credentials.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        try {
+            setError('');
+            setLoading(true);
+            await loginWithGoogle();
+            navigate('/dashboard');
+        } catch (err) {
+            setError('Failed to sign in with Google.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-[calc(100vh-80px)] flex bg-cream">
             {/* Left Side - Image & Atmosphere */}
@@ -79,13 +117,23 @@ const Login = () => {
                         <p className="text-sm text-slate-600">Please enter your details to sign in.</p>
                     </div>
 
+                    {error && (
+                        <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl">
+                            {error}
+                        </div>
+                    )}
+
                     {/* Social Login */}
                     <div className="grid grid-cols-2 gap-3 mb-6">
-                        <button className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm">
+                        <button
+                            onClick={handleGoogleLogin}
+                            disabled={loading}
+                            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50"
+                        >
                             <FcGoogle className="w-5 h-5" />
                             <span className="text-sm font-semibold text-slate-700">Google</span>
                         </button>
-                        <button className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm">
+                        <button className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50">
                             <FaApple className="w-5 h-5 text-slate-900" />
                             <span className="text-sm font-semibold text-slate-700">Apple</span>
                         </button>
@@ -100,7 +148,7 @@ const Login = () => {
                         </div>
                     </div>
 
-                    <form className="space-y-8 mt-8" action="#" method="POST">
+                    <form className="space-y-8 mt-8" onSubmit={handleSubmit}>
                         <div className="relative group">
                             <input
                                 id="email"
@@ -108,6 +156,8 @@ const Login = () => {
                                 type="email"
                                 autoComplete="email"
                                 required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 className="peer block w-full border-0 border-b-2 border-slate-200 bg-transparent py-2 px-0 text-base sm:text-lg text-slate-900 focus:border-brand-dark focus:ring-0 transition-colors placeholder-transparent"
                                 placeholder="Email address"
                             />
@@ -126,6 +176,8 @@ const Login = () => {
                                 type="password"
                                 autoComplete="current-password"
                                 required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 className="peer block w-full border-0 border-b-2 border-slate-200 bg-transparent py-2 px-0 text-base sm:text-lg text-slate-900 focus:border-brand-dark focus:ring-0 transition-colors placeholder-transparent"
                                 placeholder="Password"
                             />
@@ -162,9 +214,10 @@ const Login = () => {
 
                             <button
                                 type="submit"
-                                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-brand-dark pl-5 pr-1.5 py-1.5 text-sm font-bold text-white overflow-hidden transition-transform hover:-translate-y-0.5 w-full sm:w-auto"
+                                disabled={loading}
+                                className="group relative inline-flex items-center justify-center gap-2 rounded-full bg-brand-dark pl-5 pr-1.5 py-1.5 text-sm font-bold text-white overflow-hidden transition-transform hover:-translate-y-0.5 w-full sm:w-auto disabled:opacity-70"
                             >
-                                <span className="relative z-10">Sign in</span>
+                                <span className="relative z-10">{loading ? 'Signing in...' : 'Sign in'}</span>
                                 <div className="relative z-10 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors">
                                     <FiArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                                 </div>

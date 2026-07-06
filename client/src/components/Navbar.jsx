@@ -1,11 +1,23 @@
-import { Link, useLocation } from 'react-router-dom';
-import { FiHeart } from 'react-icons/fi';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiHeart, FiUser, FiLogOut } from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { currentUser, logout } = useAuth();
 
     const isActive = (path) => {
         return location.pathname === path;
+    };
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Failed to log out', error);
+        }
     };
 
     return (
@@ -54,18 +66,45 @@ const Navbar = () => {
 
                     {/* Auth Links */}
                     <div className="hidden md:flex items-center space-x-6">
-                        <Link
-                            to="/login"
-                            className="text-slate-600 hover:text-brand-dark text-sm font-medium transition-colors"
-                        >
-                            Sign in
-                        </Link>
-                        <Link
-                            to="/register"
-                            className="bg-brand-dark text-white hover:bg-brand-dark/90 px-6 py-2.5 rounded-full text-sm font-medium transition-all shadow-sm"
-                        >
-                            Start a campaign
-                        </Link>
+                        {currentUser ? (
+                            <>
+                                <Link
+                                    to="/dashboard"
+                                    className="flex items-center gap-2 text-slate-600 hover:text-brand-dark text-sm font-medium transition-colors"
+                                >
+                                    {currentUser.profilePicture ? (
+                                        <img src={currentUser.profilePicture} alt="Profile" className="w-8 h-8 rounded-full" />
+                                    ) : (
+                                        <div className="w-8 h-8 bg-brand-dark/10 rounded-full flex items-center justify-center text-brand-dark">
+                                            <FiUser className="w-4 h-4" />
+                                        </div>
+                                    )}
+                                    <span>{currentUser.name || 'Dashboard'}</span>
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center gap-2 text-slate-500 hover:text-red-600 text-sm font-medium transition-colors"
+                                >
+                                    <FiLogOut className="w-4 h-4" />
+                                    <span>Logout</span>
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="text-slate-600 hover:text-brand-dark text-sm font-medium transition-colors"
+                                >
+                                    Sign in
+                                </Link>
+                                <Link
+                                    to="/register"
+                                    className="bg-brand-dark text-white hover:bg-brand-dark/90 px-6 py-2.5 rounded-full text-sm font-medium transition-all shadow-sm"
+                                >
+                                    Start a campaign
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
