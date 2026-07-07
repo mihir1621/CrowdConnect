@@ -40,6 +40,10 @@ const campaignSchema = new mongoose.Schema({
         enum: ['Active', 'Completed', 'Cancelled'],
         default: 'Active',
     },
+    walletAddress: {
+        type: String,
+        default: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+    },
     createdAt: {
         type: Date,
         default: Date.now,

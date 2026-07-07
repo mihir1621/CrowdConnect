@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiShield, FiArrowRight, FiStar, FiHeart } from 'react-icons/fi';
+import { FiShield, FiArrowRight, FiStar, FiHeart, FiCheckCircle } from 'react-icons/fi';
 import { LuSearch, LuHeartHandshake, LuTrendingUp, LuShieldCheck, LuReceipt, LuEye, LuLock, LuChevronDown } from 'react-icons/lu';
 import heroImage from '../assets/hero-hands.jpg';
 import successStoryImage from '../assets/success-story-girl.png';
@@ -9,6 +9,8 @@ import successStoryMedical from '../assets/success-story-medical.png';
 import successStoryDisaster from '../assets/success-story-disaster.png';
 import campaignEnvironment from '../assets/campaign-environment.png';
 import api from '../utils/api';
+import { ethers } from 'ethers';
+import { useAuth } from '../context/AuthContext';
 
 const names = ['Anaya', 'Rahul', 'Priya', 'Amit', 'Neha', 'Vikram', 'Sneha', 'Rohan'];
 const causes = ['treatment', 'education', 'surgery', 'relief fund', 'startup', 'community project'];
@@ -16,6 +18,7 @@ const locations = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Pune
 
 const Home = () => {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const [liveDonation, setLiveDonation] = useState({
         amount: 18200,
         name: "Anaya's",
@@ -36,6 +39,12 @@ const Home = () => {
     const [quickCampaignId, setQuickCampaignId] = useState('');
     const [quickAmount, setQuickAmount] = useState('');
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [quickPaymentMethod, setQuickPaymentMethod] = useState('Razorpay');
+    const [quickWalletAddress, setQuickWalletAddress] = useState('');
+    const [isConnectingQuickWallet, setIsConnectingQuickWallet] = useState(false);
+    const [isQuickProcessing, setIsQuickProcessing] = useState(false);
+    const [quickPaymentSuccess, setQuickPaymentSuccess] = useState(false);
+    const [quickPaymentDetails, setQuickPaymentDetails] = useState(null);
 
     const toggleFaq = (index) => {
         setOpenFaq(openFaq === index ? null : index);
@@ -103,6 +112,113 @@ const Home = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const connectQuickWallet = async () => {
+        if (!window.ethereum) {
+            console.warn('MetaMask not detected. Simulating wallet connection.');
+            setIsConnectingQuickWallet(true);
+            setTimeout(() => {
+                setQuickWalletAddress('0x70997970C51812dc3A010C7d01b50e0d17dc79C8');
+                setIsConnectingQuickWallet(false);
+            }, 800);
+            return;
+        }
+        setIsConnectingQuickWallet(true);
+        try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const accounts = await provider.send("eth_requestAccounts", []);
+            setQuickWalletAddress(accounts[0]);
+        } catch (error) {
+            console.error("Error connecting wallet:", error);
+            alert('Failed to connect wallet.');
+        } finally {
+            setIsConnectingQuickWallet(false);
+        }
+    };
+
+    const handleQuickCryptoPayment = async (e) => {
+        e.preventDefault();
+
+        if (!currentUser) {
+            navigate('/login');
+            return;
+        }
+
+        if (!quickCampaignId) {
+            alert('Please select a campaign');
+            return;
+        }
+
+        const donationAmount = Number(quickAmount);
+        if (!donationAmount || donationAmount <= 0) {
+            alert('Please enter a valid donation amount');
+            return;
+        }
+
+        if (!quickWalletAddress) {
+            alert('Please connect your MetaMask wallet first.');
+            return;
+        }
+
+        setIsQuickProcessing(true);
+
+        try {
+            let txHash;
+
+            if (!window.ethereum) {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+                txHash = `mock_tx_${Date.now()}`;
+            } else {
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                const signer = await provider.getSigner();
+
+                // Convert INR amount to ETH (using a mock rate of 1 ETH = 300,000 INR for demo/testing)
+                const ethAmount = (donationAmount / 300000).toFixed(6);
+                const amountInWei = ethers.parseEther(ethAmount);
+
+                const campaign = allCampaigns.find(c => c._id === quickCampaignId);
+                const recipientAddress = campaign?.walletAddress || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8';
+
+                try {
+                    const tx = await signer.sendTransaction({
+                        to: recipientAddress,
+                        value: amountInWei,
+                    });
+                    txHash = tx.hash;
+                    await tx.wait();
+                } catch (txErr) {
+                    console.warn('Transaction failed, falling back to mock transaction for development:', txErr.message);
+                    txHash = `mock_tx_${Date.now()}`;
+                }
+            }
+
+            const campaign = allCampaigns.find(c => c._id === quickCampaignId);
+
+            // Verify on backend
+            const verifyRes = await api.post('/payments/verify-crypto', {
+                txHash: txHash,
+                campaignId: quickCampaignId,
+                amount: donationAmount,
+                message: 'Quick Donation from Home Page'
+            });
+
+            if (verifyRes.data.success) {
+                setQuickPaymentDetails({
+                    paymentId: txHash,
+                    amount: donationAmount,
+                    campaignTitle: campaign?.title
+                });
+                setQuickPaymentSuccess(true);
+            } else {
+                alert('Verification failed.');
+            }
+        } catch (err) {
+            console.error('Crypto payment failed:', err);
+            alert('Crypto payment failed. Please try again.');
+        } finally {
+            setIsQuickProcessing(false);
+        }
+    };
 
     const handleQuickDonate = (e) => {
         e.preventDefault();
@@ -235,131 +351,242 @@ const Home = () => {
             {/* Quick Donate Section */}
             <div className="bg-white py-16 border-t border-slate-200/60">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] p-8 md:p-12 shadow-xl text-white relative overflow-hidden">
+                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] p-8 md:p-12 shadow-xl text-white relative overflow-hidden min-h-[400px] flex flex-col justify-center">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
 
-                        <div className="relative z-10 text-center max-w-2xl mx-auto mb-10">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 mb-4 text-xs font-semibold text-indigo-300">
-                                <FiHeart className="w-3.5 h-3.5 fill-indigo-300" /> Quick Donation
-                            </span>
-                            <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 tracking-tight">
-                                Support a Cause in Seconds
-                            </h2>
-                            <p className="text-slate-300 text-sm md:text-base">
-                                Select a campaign, choose an amount, and make an impact instantly.
-                            </p>
-                        </div>
-
-                        <form onSubmit={handleQuickDonate} className="relative z-10 max-w-3xl mx-auto space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Campaign Selector */}
-                                <div className="space-y-2 relative" id="quick-campaign-dropdown">
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Select Campaign</label>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-left text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all flex items-center justify-between gap-3 cursor-pointer"
-                                    >
-                                        {selectedCampaign ? (
-                                            <div className="flex items-center gap-2.5 min-w-0">
-                                                <span className="text-lg flex-shrink-0">
-                                                    {selectedCampaign.category === 'Medical' ? '❤️' :
-                                                        selectedCampaign.category === 'Education' ? '📚' :
-                                                            selectedCampaign.category === 'Environment' ? '🌿' :
-                                                                selectedCampaign.category === 'Animals' ? '🐾' : '🤝'}
-                                                </span>
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-semibold truncate text-white">{selectedCampaign.title}</p>
-                                                    <p className="text-[10px] text-slate-300 font-medium">{selectedCampaign.category}</p>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <span className="text-slate-400 text-sm">Select a campaign...</span>
-                                        )}
-                                        <LuChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {dropdownOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="absolute z-50 left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto"
-                                            >
-                                                {allCampaigns.map((campaign) => (
-                                                    <button
-                                                        key={campaign._id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setQuickCampaignId(campaign._id);
-                                                            setDropdownOpen(false);
-                                                        }}
-                                                        className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center gap-3 border-b border-white/5 last:border-0 ${quickCampaignId === campaign._id ? 'bg-white/5' : ''}`}
-                                                    >
-                                                        <span className="text-lg flex-shrink-0">
-                                                            {campaign.category === 'Medical' ? '❤️' :
-                                                                campaign.category === 'Education' ? '📚' :
-                                                                    campaign.category === 'Environment' ? '🌿' :
-                                                                        campaign.category === 'Animals' ? '🐾' : '🤝'}
-                                                        </span>
-                                                        <div className="min-w-0">
-                                                            <p className="text-sm font-semibold text-white truncate">{campaign.title}</p>
-                                                            <p className="text-[10px] text-slate-400 font-medium">{campaign.category}</p>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-
-                                {/* Amount Selector */}
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Donation Amount (₹)</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
-                                        <input
-                                            type="number"
-                                            required
-                                            min="10"
-                                            value={quickAmount}
-                                            onChange={(e) => setQuickAmount(e.target.value)}
-                                            placeholder="Enter Amount"
-                                            className="w-full bg-white/10 border border-white/20 rounded-2xl pl-8 pr-4 py-3.5 text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all font-semibold"
-                                        />
+                        <AnimatePresence mode="wait">
+                            {!quickPaymentSuccess ? (
+                                <motion.div
+                                    key="quick-form"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="space-y-6"
+                                >
+                                    <div className="relative z-10 text-center max-w-2xl mx-auto">
+                                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 mb-4 text-xs font-semibold text-indigo-300">
+                                            <FiHeart className="w-3.5 h-3.5 fill-indigo-300" /> Quick Donation
+                                        </span>
+                                        <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 tracking-tight">
+                                            Support a Cause in Seconds
+                                        </h2>
+                                        <p className="text-slate-300 text-sm md:text-base">
+                                            Select a campaign, choose an amount, and make an impact instantly.
+                                        </p>
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Preset Buttons & Submit Button */}
-                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
-                                <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                    {[500, 1000, 2000, 5000].map((amt) => (
+                                    {/* Payment Method Selector */}
+                                    <div className="relative z-10 flex bg-white/5 border border-white/10 p-1.5 rounded-2xl gap-2 max-w-md mx-auto">
                                         <button
                                             type="button"
-                                            key={amt}
-                                            onClick={() => setQuickAmount(amt.toString())}
-                                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${quickAmount === amt.toString()
-                                                ? 'bg-white text-indigo-950 border-white'
-                                                : 'bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20'
+                                            onClick={() => setQuickPaymentMethod('Razorpay')}
+                                            className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${quickPaymentMethod === 'Razorpay'
+                                                ? 'bg-white text-indigo-950 shadow-sm'
+                                                : 'text-slate-400 hover:text-white'
                                                 }`}
                                         >
-                                            ₹{amt}
+                                            💳 Card / UPI
                                         </button>
-                                    ))}
-                                </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuickPaymentMethod('Crypto')}
+                                            className={`flex-1 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${quickPaymentMethod === 'Crypto'
+                                                ? 'bg-white text-indigo-950 shadow-sm'
+                                                : 'text-slate-400 hover:text-white'
+                                                }`}
+                                        >
+                                            🦊 MetaMask (ETH)
+                                        </button>
+                                    </div>
 
-                                <button
-                                    type="submit"
-                                    className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                                    <form onSubmit={quickPaymentMethod === 'Crypto' ? handleQuickCryptoPayment : handleQuickDonate} className="relative z-10 max-w-3xl mx-auto space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* Campaign Selector */}
+                                            <div className="space-y-2 relative" id="quick-campaign-dropdown">
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Select Campaign</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                                                    className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-left text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all flex items-center justify-between gap-3 cursor-pointer"
+                                                >
+                                                    {selectedCampaign ? (
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <span className="text-lg flex-shrink-0">
+                                                                {selectedCampaign.category === 'Medical' ? '❤️' :
+                                                                    selectedCampaign.category === 'Education' ? '📚' :
+                                                                        selectedCampaign.category === 'Environment' ? '🌿' :
+                                                                            selectedCampaign.category === 'Animals' ? '🐾' : '🤝'}
+                                                            </span>
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold truncate text-white">{selectedCampaign.title}</p>
+                                                                <p className="text-[10px] text-slate-300 font-medium">{selectedCampaign.category}</p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-slate-400 text-sm">Select a campaign...</span>
+                                                    )}
+                                                    <LuChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                                                </button>
+
+                                                <AnimatePresence>
+                                                    {dropdownOpen && (
+                                                        <motion.div
+                                                            initial={{ opacity: 0, y: -10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            exit={{ opacity: 0, y: -10 }}
+                                                            transition={{ duration: 0.2 }}
+                                                            className="absolute z-50 left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto"
+                                                        >
+                                                            {allCampaigns.map((campaign) => (
+                                                                <button
+                                                                    key={campaign._id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setQuickCampaignId(campaign._id);
+                                                                        setDropdownOpen(false);
+                                                                    }}
+                                                                    className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center gap-3 border-b border-white/5 last:border-0 ${quickCampaignId === campaign._id ? 'bg-white/5' : ''}`}
+                                                                >
+                                                                    <span className="text-lg flex-shrink-0">
+                                                                        {campaign.category === 'Medical' ? '❤️' :
+                                                                            campaign.category === 'Education' ? '📚' :
+                                                                                campaign.category === 'Environment' ? '🌿' :
+                                                                                    campaign.category === 'Animals' ? '🐾' : '🤝'}
+                                                                    </span>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-semibold text-white truncate">{campaign.title}</p>
+                                                                        <p className="text-[10px] text-slate-400 font-medium">{campaign.category}</p>
+                                                                    </div>
+                                                                </button>
+                                                            ))}
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+
+                                            {/* Amount Selector */}
+                                            <div className="space-y-2">
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Donation Amount (₹)</label>
+                                                <div className="relative">
+                                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+                                                    <input
+                                                        type="number"
+                                                        required
+                                                        min="10"
+                                                        value={quickAmount}
+                                                        onChange={(e) => setQuickAmount(e.target.value)}
+                                                        placeholder="Enter Amount"
+                                                        className="w-full bg-white/10 border border-white/20 rounded-2xl pl-8 pr-4 py-3.5 text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all font-semibold"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Crypto Wallet Details */}
+                                        {quickPaymentMethod === 'Crypto' && (
+                                            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                                <div className="flex flex-col text-left">
+                                                    <span className="text-xs text-slate-400 font-medium">Estimated ETH Amount</span>
+                                                    <span className="text-lg font-bold text-indigo-300">
+                                                        {(Number(quickAmount || 0) / 300000).toFixed(6)} ETH
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    {quickWalletAddress ? (
+                                                        <span className="font-mono text-xs text-slate-300 bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 max-w-[180px] truncate">
+                                                            {quickWalletAddress}
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={connectQuickWallet}
+                                                            disabled={isConnectingQuickWallet}
+                                                            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer"
+                                                        >
+                                                            {isConnectingQuickWallet ? 'Connecting...' : 'Connect MetaMask'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Preset Buttons & Submit Button */}
+                                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
+                                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                                                {[500, 1000, 2000, 5000].map((amt) => (
+                                                    <button
+                                                        type="button"
+                                                        key={amt}
+                                                        onClick={() => setQuickAmount(amt.toString())}
+                                                        className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${quickAmount === amt.toString()
+                                                            ? 'bg-white text-indigo-950 border-white'
+                                                            : 'bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20'
+                                                            }`}
+                                                    >
+                                                        ₹{amt}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            <button
+                                                type="submit"
+                                                disabled={isQuickProcessing || (quickPaymentMethod === 'Crypto' && !quickWalletAddress)}
+                                                className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                            >
+                                                {isQuickProcessing ? (
+                                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                                ) : quickPaymentMethod === 'Crypto' ? (
+                                                    <>Donate {(Number(quickAmount || 0) / 300000).toFixed(6)} ETH <FiHeart /></>
+                                                ) : (
+                                                    <>Donate Now <FiArrowRight /></>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="quick-success"
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="text-center space-y-6 py-4 relative z-10"
                                 >
-                                    Donate Now <FiArrowRight />
-                                </button>
-                            </div>
-                        </form>
+                                    <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto border border-green-500/30">
+                                        <FiCheckCircle className="w-10 h-10" />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <h2 className="text-2xl md:text-3xl font-bold font-serif text-white">Donation Successful!</h2>
+                                        <p className="text-slate-300 text-sm">Thank you for supporting <span className="font-semibold text-white">"{quickPaymentDetails?.campaignTitle}"</span>.</p>
+                                    </div>
+
+                                    <div className="bg-white/5 rounded-2xl p-5 border border-white/10 max-w-md mx-auto text-left space-y-2.5">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-400">Amount Paid:</span>
+                                            <span className="font-bold text-white">₹{quickPaymentDetails?.amount.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-slate-400">Transaction Hash:</span>
+                                            <span className="font-mono text-indigo-300 truncate max-w-[200px]">{quickPaymentDetails?.paymentId}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button
+                                            onClick={() => {
+                                                setQuickPaymentSuccess(false);
+                                                setQuickAmount('');
+                                            }}
+                                            className="px-6 py-2.5 bg-white text-indigo-950 font-bold rounded-xl hover:bg-slate-100 transition-all cursor-pointer text-sm"
+                                        >
+                                            Make Another Donation
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>

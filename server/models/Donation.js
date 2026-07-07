@@ -15,17 +15,22 @@ const donationSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    paymentMethod: {
+        type: String,
+        enum: ['Razorpay', 'Crypto'],
+        default: 'Razorpay',
+    },
     razorpayPaymentId: {
         type: String,
-        required: true,
     },
     razorpayOrderId: {
         type: String,
-        required: true,
     },
     razorpaySignature: {
         type: String,
-        required: true,
+    },
+    cryptoTxHash: {
+        type: String,
     },
     status: {
         type: String,
