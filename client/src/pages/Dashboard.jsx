@@ -145,11 +145,19 @@ const Dashboard = () => {
                                                 <p className="text-sm text-slate-500">Donated on {new Date(donation.createdAt).toLocaleDateString()}</p>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-slate-900">+₹{donation.amount}</p>
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                Successful
-                                            </span>
+                                        <div className="text-right flex flex-col items-end gap-1.5">
+                                            <p className="font-bold text-slate-900">+₹{donation.amount.toLocaleString()}</p>
+                                            <div className="flex gap-1.5">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${donation.paymentMethod === 'Crypto'
+                                                        ? 'bg-orange-50 text-orange-700 border border-orange-100'
+                                                        : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                                                    }`}>
+                                                    {donation.paymentMethod === 'Crypto' ? '🦊 MetaMask' : '💳 Razorpay'}
+                                                </span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-50 text-green-700 border border-green-100">
+                                                    Successful
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 )) : (
