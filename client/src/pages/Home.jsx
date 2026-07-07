@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiShield, FiArrowRight, FiStar } from 'react-icons/fi';
+import { FiShield, FiArrowRight, FiStar, FiHeart } from 'react-icons/fi';
 import { LuSearch, LuHeartHandshake, LuTrendingUp, LuShieldCheck, LuReceipt, LuEye, LuLock, LuChevronDown } from 'react-icons/lu';
 import heroImage from '../assets/hero-hands.jpg';
 import successStoryImage from '../assets/success-story-girl.png';
@@ -15,6 +15,7 @@ const causes = ['treatment', 'education', 'surgery', 'relief fund', 'startup', '
 const locations = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Pune', 'Kolkata'];
 
 const Home = () => {
+    const navigate = useNavigate();
     const [liveDonation, setLiveDonation] = useState({
         amount: 18200,
         name: "Anaya's",
@@ -24,13 +25,17 @@ const Home = () => {
     });
 
     const [stats, setStats] = useState({
-        raised: 127,
-        donors: 840,
-        orgs: 2400
+        raised: 133,
+        donors: 891,
+        orgs: 2345
     });
 
     const [openFaq, setOpenFaq] = useState(null);
     const [featuredCampaigns, setFeaturedCampaigns] = useState([]);
+    const [allCampaigns, setAllCampaigns] = useState([]);
+    const [quickCampaignId, setQuickCampaignId] = useState('');
+    const [quickAmount, setQuickAmount] = useState('');
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     const toggleFaq = (index) => {
         setOpenFaq(openFaq === index ? null : index);
@@ -41,7 +46,11 @@ const Home = () => {
         const fetchFeatured = async () => {
             try {
                 const response = await api.get('/campaigns');
+                setAllCampaigns(response.data);
                 setFeaturedCampaigns(response.data.slice(0, 3));
+                if (response.data.length > 0) {
+                    setQuickCampaignId(response.data[0]._id);
+                }
             } catch (error) {
                 console.error("Error fetching featured campaigns:", error);
             }
@@ -65,12 +74,7 @@ const Home = () => {
             });
         }, 6000);
 
-        // Randomize stats once on mount to simulate dynamic data
-        setStats({
-            raised: Math.floor(Math.random() * 50) + 100, // 100 to 150 Cr
-            donors: Math.floor(Math.random() * 200) + 700, // 700k to 900k
-            orgs: Math.floor(Math.random() * 500) + 2000 // 2000 to 2500
-        });
+
 
         return () => clearInterval(interval);
     }, []);
@@ -89,11 +93,38 @@ const Home = () => {
         }
     }, [location.hash]);
 
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            const dropdown = document.getElementById('quick-campaign-dropdown');
+            if (dropdown && !dropdown.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleQuickDonate = (e) => {
+        e.preventDefault();
+        if (!quickCampaignId) {
+            alert('Please select a campaign');
+            return;
+        }
+        const amount = Number(quickAmount);
+        if (!amount || amount <= 0) {
+            alert('Please enter a valid donation amount');
+            return;
+        }
+        navigate(`/donate/${quickCampaignId}?amount=${amount}`);
+    };
+
+    const selectedCampaign = allCampaigns.find(c => c._id === quickCampaignId);
+
     return (
         <>
             <div className="bg-cream min-h-[calc(100vh-80px)] flex flex-col justify-center">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 w-full flex-grow flex flex-col justify-center">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center mb-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 w-full flex-grow flex flex-col justify-center">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12 items-center mb-4">
 
                         {/* Left Column - Text */}
                         <motion.div
@@ -103,7 +134,7 @@ const Home = () => {
                             className="max-w-xl"
                         >
                             {/* Badge */}
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-light border border-slate-200/60 mb-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-light border border-slate-200/60 mb-4">
                                 <FiShield className="w-3.5 h-3.5 text-brand-dark" />
                                 <span className="text-[11px] sm:text-xs font-medium text-brand-dark tracking-wide">
                                     Only verified organizations. Nothing else.
@@ -111,19 +142,19 @@ const Home = () => {
                             </div>
 
                             {/* Heading */}
-                            <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold font-serif text-slate-900 leading-[1.1] mb-5 tracking-tight">
+                            <h1 className="text-4xl md:text-5xl lg:text-[3.2rem] font-bold font-serif text-slate-900 leading-[1.1] mb-3 tracking-tight">
                                 Fund the causes<br />
                                 that <span className="text-brand-dark">actually</span><br />
                                 <span className="text-brand-dark">change lives.</span>
                             </h1>
 
                             {/* Subheading */}
-                            <p className="text-base md:text-lg text-slate-600 leading-relaxed mb-8 max-w-lg">
+                            <p className="text-sm md:text-base text-slate-600 leading-relaxed mb-4 max-w-lg">
                                 CrowdConnect is where NGOs, hospitals, schools and social causes meet donors who care. Every campaign is verified. Every rupee is tracked. Every story is real.
                             </p>
 
                             {/* Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center gap-4 mb-10">
+                            <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
                                 <Link
                                     to="/campaigns"
                                     className="w-full sm:w-auto rounded-full bg-brand-dark px-6 py-3 text-sm font-medium text-white shadow-md hover:bg-brand-dark/90 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2"
@@ -139,7 +170,7 @@ const Home = () => {
                             </div>
 
                             {/* Stats */}
-                            <div className="pt-8 border-t border-slate-200/60 grid grid-cols-3 gap-4">
+                            <div className="pt-4 border-t border-slate-200/60 grid grid-cols-3 gap-4">
                                 <div>
                                     <p className="text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Raised</p>
                                     <p className="text-xl sm:text-2xl font-bold font-serif text-slate-900">₹{stats.raised} Cr</p>
@@ -161,7 +192,7 @@ const Home = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                            className="relative h-[300px] sm:h-[400px] lg:h-[480px] w-full mt-8 lg:mt-0"
+                            className="relative h-[250px] sm:h-[350px] lg:h-[380px] w-full mt-8 lg:mt-0"
                         >
                             <img
                                 src={heroImage}
@@ -199,19 +230,152 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Trusted By Section */}
-                <div className="w-full border-t border-slate-200/60 bg-cream/50 py-10 mt-auto">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <p className="text-center text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-8">
-                            Trusted by {stats.orgs.toLocaleString()}+ verified organizations
-                        </p>
-                        <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-6 sm:gap-x-12 md:gap-x-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                            {['Ashadeep Foundation', 'Goonj', 'SELCO Foundation', 'St. Jude India', 'HealHands Trust', 'Teach For India'].map((org, index) => (
-                                <span key={index} className="text-lg sm:text-xl font-serif font-semibold text-slate-700">
-                                    {org}
-                                </span>
-                            ))}
+            </div>
+
+            {/* Quick Donate Section */}
+            <div className="bg-white py-16 border-t border-slate-200/60">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] p-8 md:p-12 shadow-xl text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-3xl -mr-20 -mt-20"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl -ml-20 -mb-20"></div>
+
+                        <div className="relative z-10 text-center max-w-2xl mx-auto mb-10">
+                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 mb-4 text-xs font-semibold text-indigo-300">
+                                <FiHeart className="w-3.5 h-3.5 fill-indigo-300" /> Quick Donation
+                            </span>
+                            <h2 className="text-3xl md:text-4xl font-bold font-serif mb-4 tracking-tight">
+                                Support a Cause in Seconds
+                            </h2>
+                            <p className="text-slate-300 text-sm md:text-base">
+                                Select a campaign, choose an amount, and make an impact instantly.
+                            </p>
                         </div>
+
+                        <form onSubmit={handleQuickDonate} className="relative z-10 max-w-3xl mx-auto space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Campaign Selector */}
+                                <div className="space-y-2 relative" id="quick-campaign-dropdown">
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Select Campaign</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-left text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all flex items-center justify-between gap-3 cursor-pointer"
+                                    >
+                                        {selectedCampaign ? (
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <span className="text-lg flex-shrink-0">
+                                                    {selectedCampaign.category === 'Medical' ? '❤️' :
+                                                        selectedCampaign.category === 'Education' ? '📚' :
+                                                            selectedCampaign.category === 'Environment' ? '🌿' :
+                                                                selectedCampaign.category === 'Animals' ? '🐾' : '🤝'}
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-semibold truncate text-white">{selectedCampaign.title}</p>
+                                                    <p className="text-[10px] text-slate-300 font-medium">{selectedCampaign.category}</p>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <span className="text-slate-400 text-sm">Select a campaign...</span>
+                                        )}
+                                        <LuChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 flex-shrink-0 ${dropdownOpen ? 'rotate-180' : ''}`} />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {dropdownOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="absolute z-50 left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto"
+                                            >
+                                                {allCampaigns.map((campaign) => (
+                                                    <button
+                                                        key={campaign._id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setQuickCampaignId(campaign._id);
+                                                            setDropdownOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-4 py-3 hover:bg-white/10 transition-colors flex items-center gap-3 border-b border-white/5 last:border-0 ${quickCampaignId === campaign._id ? 'bg-white/5' : ''}`}
+                                                    >
+                                                        <span className="text-lg flex-shrink-0">
+                                                            {campaign.category === 'Medical' ? '❤️' :
+                                                                campaign.category === 'Education' ? '📚' :
+                                                                    campaign.category === 'Environment' ? '🌿' :
+                                                                        campaign.category === 'Animals' ? '🐾' : '🤝'}
+                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <p className="text-sm font-semibold text-white truncate">{campaign.title}</p>
+                                                            <p className="text-[10px] text-slate-400 font-medium">{campaign.category}</p>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* Amount Selector */}
+                                <div className="space-y-2">
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">Donation Amount (₹)</label>
+                                    <div className="relative">
+                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">₹</span>
+                                        <input
+                                            type="number"
+                                            required
+                                            min="10"
+                                            value={quickAmount}
+                                            onChange={(e) => setQuickAmount(e.target.value)}
+                                            placeholder="Enter Amount"
+                                            className="w-full bg-white/10 border border-white/20 rounded-2xl pl-8 pr-4 py-3.5 text-white focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all font-semibold"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Preset Buttons & Submit Button */}
+                            <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-2">
+                                <div className="flex flex-wrap gap-2 w-full md:w-auto">
+                                    {[500, 1000, 2000, 5000].map((amt) => (
+                                        <button
+                                            type="button"
+                                            key={amt}
+                                            onClick={() => setQuickAmount(amt.toString())}
+                                            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${quickAmount === amt.toString()
+                                                ? 'bg-white text-indigo-950 border-white'
+                                                : 'bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20'
+                                                }`}
+                                        >
+                                            ₹{amt}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="w-full md:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/20 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                                >
+                                    Donate Now <FiArrowRight />
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            {/* Trusted By Section */}
+            <div className="w-full border-t border-slate-200/60 bg-cream/50 py-10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <p className="text-center text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-8">
+                        Trusted by 2,345+ verified organizations
+                    </p>
+                    <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-6 sm:gap-x-12 md:gap-x-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                        {['Ashadeep Foundation', 'Goonj', 'SELCO Foundation', 'St. Jude India', 'HealHands Trust', 'Teach For India'].map((org, index) => (
+                            <span key={index} className="text-lg sm:text-xl font-serif font-semibold text-slate-700">
+                                {org}
+                            </span>
+                        ))}
                     </div>
                 </div>
             </div>

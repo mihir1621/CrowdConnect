@@ -5,16 +5,6 @@ import { FiShare2, FiHeart, FiClock, FiShield, FiCheckCircle } from 'react-icons
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 
-const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-        const script = document.createElement('script');
-        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-        script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
-        document.body.appendChild(script);
-    });
-};
-
 const CampaignDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -23,7 +13,6 @@ const CampaignDetails = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [donationAmount, setDonationAmount] = useState('');
-    const [isProcessing, setIsProcessing] = useState(false);
 
     useEffect(() => {
         const fetchCampaign = async () => {
@@ -39,10 +28,9 @@ const CampaignDetails = () => {
         };
 
         fetchCampaign();
-        loadRazorpayScript();
     }, [id]);
 
-    const handleDonate = async () => {
+    const handleDonate = () => {
         if (!currentUser) {
             navigate('/login');
             return;
@@ -54,77 +42,7 @@ const CampaignDetails = () => {
             return;
         }
 
-        setIsProcessing(true);
-
-        try {
-            // 1. Create Order
-            const orderRes = await api.post('/payments/create-order', {
-                amount,
-                campaignId: id
-            });
-
-            const order = orderRes.data;
-
-            // 2. Initialize Razorpay Options
-            const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_mock', // Fallback for mock
-                amount: order.amount,
-                currency: order.currency,
-                name: 'CrowdConnect',
-                description: `Donation for ${campaign.title}`,
-                order_id: order.id,
-                handler: async (response) => {
-                    try {
-                        // 3. Verify Payment
-                        await api.post('/payments/verify-payment', {
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            amount,
-                            campaignId: id
-                        });
-
-                        alert('Thank you for your donation!');
-                        // Refresh campaign data
-                        const updatedCampaign = await api.get(`/campaigns/${id}`);
-                        setCampaign(updatedCampaign.data);
-                        setDonationAmount('');
-                    } catch (err) {
-                        console.error('Payment verification failed:', err);
-                        alert('Payment verification failed. Please contact support.');
-                    }
-                },
-                prefill: {
-                    name: currentUser.name || '',
-                    email: currentUser.email || '',
-                },
-                theme: {
-                    color: '#1e1b4b' // brand-dark
-                }
-            };
-
-            // If mock order (no key), just simulate success
-            if (order.id.startsWith('order_mock_')) {
-                options.handler({
-                    razorpay_order_id: order.id,
-                    razorpay_payment_id: `pay_mock_${Date.now()}`,
-                    razorpay_signature: 'mock_signature'
-                });
-                return;
-            }
-
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response) {
-                alert(`Payment failed: ${response.error.description}`);
-            });
-            rzp.open();
-
-        } catch (err) {
-            console.error('Error initiating payment:', err);
-            alert('Failed to initiate payment. Please try again.');
-        } finally {
-            setIsProcessing(false);
-        }
+        navigate(`/donate/${id}?amount=${amount}`);
     };
 
     if (loading) {
@@ -234,8 +152,8 @@ const CampaignDetails = () => {
                                                     key={amount}
                                                     onClick={() => setDonationAmount(amount.toString())}
                                                     className={`py-3 border-2 rounded-xl font-semibold transition-all ${donationAmount === amount.toString()
-                                                            ? 'border-brand-dark bg-brand-dark/5 text-brand-dark'
-                                                            : 'border-slate-100 text-slate-700 hover:border-brand-dark hover:text-brand-dark hover:bg-brand-dark/5'
+                                                        ? 'border-brand-dark bg-brand-dark/5 text-brand-dark'
+                                                        : 'border-slate-100 text-slate-700 hover:border-brand-dark hover:text-brand-dark hover:bg-brand-dark/5'
                                                         }`}
                                                 >
                                                     ₹{amount}
@@ -254,14 +172,9 @@ const CampaignDetails = () => {
                                         </div>
                                         <button
                                             onClick={handleDonate}
-                                            disabled={isProcessing}
-                                            className="w-full bg-brand-dark text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-brand-dark/20 hover:bg-brand-dark/90 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                                            className="w-full bg-brand-dark text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-brand-dark/20 hover:bg-brand-dark/90 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
                                         >
-                                            {isProcessing ? (
-                                                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                            ) : (
-                                                <>Donate Now <FiHeart /></>
-                                            )}
+                                            Donate Now <FiHeart />
                                         </button>
                                     </div>
 

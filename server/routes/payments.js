@@ -50,7 +50,7 @@ router.post('/create-order', verifyToken, async (req, res) => {
 // Verify payment
 router.post('/verify-payment', verifyToken, async (req, res) => {
     try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, campaignId } = req.body;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, campaignId, message } = req.body;
 
         const user = await User.findOne({ firebaseUid: req.user.uid });
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -79,6 +79,7 @@ router.post('/verify-payment', verifyToken, async (req, res) => {
                 razorpayPaymentId: razorpay_payment_id || `mock_payment_${Date.now()}`,
                 razorpayOrderId: razorpay_order_id || `mock_order_${Date.now()}`,
                 razorpaySignature: razorpay_signature || `mock_signature_${Date.now()}`,
+                message: message || '',
                 status: 'Successful'
             });
             await donation.save();

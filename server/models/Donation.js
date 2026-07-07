@@ -32,6 +32,10 @@ const donationSchema = new mongoose.Schema({
         enum: ['Pending', 'Successful', 'Failed'],
         default: 'Pending',
     },
+    message: {
+        type: String,
+        default: '',
+    },
     createdAt: {
         type: Date,
         default: Date.now,

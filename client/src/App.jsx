@@ -23,6 +23,7 @@ import TrustSafety from './pages/TrustSafety';
 import Verification from './pages/Verification';
 import Compliance from './pages/Compliance';
 import Pricing from './pages/Pricing';
+import Donate from './pages/Donate';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -47,6 +48,11 @@ function App() {
             <Route path="/categories" element={<Categories />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/campaigns/:id" element={<CampaignDetails />} />
+            <Route path="/donate/:id" element={
+              <PrivateRoute>
+                <Donate />
+              </PrivateRoute>
+            } />
             <Route path="/dashboard" element={
               <PrivateRoute>
                 <Dashboard />
