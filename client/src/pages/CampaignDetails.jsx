@@ -37,12 +37,11 @@ const CampaignDetails = () => {
         }
 
         const amount = Number(donationAmount);
-        if (!amount || amount <= 0) {
-            alert('Please enter a valid donation amount');
-            return;
+        if (amount && amount > 0) {
+            navigate(`/donate/${id}?amount=${amount}`);
+        } else {
+            navigate(`/donate/${id}`);
         }
-
-        navigate(`/donate/${id}?amount=${amount}`);
     };
 
     if (loading) {
@@ -83,14 +82,24 @@ const CampaignDetails = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                         <div className="absolute bottom-0 left-0 p-8 w-full">
-                            <div className="flex items-center gap-2 text-white/90 mb-3">
-                                <FiCheckCircle className="text-green-400" />
-                                <span className="text-sm font-medium">Verified Organization</span>
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                                <div>
+                                    <div className="flex items-center gap-2 text-white/90 mb-3">
+                                        <FiCheckCircle className="text-green-400" />
+                                        <span className="text-sm font-medium">Verified Organization</span>
+                                    </div>
+                                    <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 leading-tight">
+                                        {campaign.title}
+                                    </h1>
+                                    <p className="text-lg text-white/80 font-medium">by {campaign.organization?.name || 'Verified Organization'}</p>
+                                </div>
+                                <button
+                                    onClick={handleDonate}
+                                    className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 self-start md:self-auto cursor-pointer"
+                                >
+                                    Donate Now <FiHeart className="fill-white" />
+                                </button>
                             </div>
-                            <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-2 leading-tight">
-                                {campaign.title}
-                            </h1>
-                            <p className="text-lg text-white/80 font-medium">by {campaign.organization?.name || 'Verified Organization'}</p>
                         </div>
                     </div>
 
